@@ -1,0 +1,19 @@
+{
+  "name": "Boletus Finder",
+  "short_name": "Boletus",
+  "description": "Guia dels bolets de Catalunya: quins són bons, com es cuinen, amb què es confonen i a quins boscos es fan.",
+  "lang": "ca",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F3EEDF",
+  "theme_color": "#2F6B3A",
+  "categories": ["education", "food", "travel"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ca">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boletus Finder</title>
+<meta name="description" content="Guia dels bolets de Catalunya: quins són bons, com es cuinen, amb què es confonen i a quins boscos es fan, amb mapa interactiu.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Boletus Finder">
+<meta name="theme-color" content="#2F6B3A" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1F17" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+/* Layout: capçalera, sis categories grans, mapa de zones a l'esquerra i graella de fitxes a la dreta; detall en panell lateral */
+:root{
+  --bg:#E4DCC6; --bg2:#F3EEDF; --surface:#FFFDF7; --ink:#231F16; --muted:#6A6250; --line:#D5CBB0;
+  --accent:#2F6B3A; --accent-soft:#DCE9D6; --coral:#B5391F; --coral-soft:#F6DDD3; --gold:#8F6400; --gold-soft:#F3E6BF;
+  --c-ex:#9A6B00; --c-bo:#2F6B3A; --c-cond:#B85A14; --c-sv:#6B675C; --c-tox:#B5391F; --c-mort:#5B2A6E;
+  --sea:#DCE6E4; --land:#EFE8D4; --shade:#231F16;
+  --p-bo:#2F6B3A; --p-aviat:#3D78B8; --p-reg:#B58A1A; --p-sec:#B5673A; --p-gel:#7FA6C9;
+  --f-display:"Bricolage Grotesque",system-ui,sans-serif;
+  --f-body:"Literata",Georgia,serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1A1F17; --bg2:#232A1E; --surface:#262C21; --ink:#ECE7D8; --muted:#A8A28E; --line:#3B4333;
+  --accent:#8CCB7A; --accent-soft:#263A24; --coral:#F08A72; --coral-soft:#3B1F1A; --gold:#E6B94F; --gold-soft:#352A10;
+  --c-ex:#E6B94F; --c-bo:#8CCB7A; --c-cond:#F0A05A; --c-sv:#A9A698; --c-tox:#F08A72; --c-mort:#C79BEA;
+  --sea:#17232A; --land:#2A3024; --shade:#000;
+  --p-bo:#8CCB7A; --p-aviat:#7DB4EA; --p-reg:#E6B94F; --p-sec:#D98C5F; --p-gel:#A9C8E4; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:linear-gradient(180deg,var(--bg2) 0,var(--bg) 520px) var(--bg);background-attachment:fixed;color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+header.top{padding-bottom:18px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,5vw,52px);line-height:1;margin:6px 0 8px;letter-spacing:-.02em}
+.lede{color:var(--muted);margin:0;max-width:66ch}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.safety{margin:16px 0 0;padding:10px 14px;border-left:3px solid var(--coral);background:var(--coral-soft);border-radius:0 10px 10px 0;font-size:14px}
+.safety b{font-family:var(--f-display)}
+
+/* Categories */
+.cats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:22px 0 18px}
+.cat{--c:var(--ink);display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;color:var(--ink);font:inherit;position:relative;overflow:hidden;min-width:0}
+.cat svg{grid-row:span 2;width:30px;height:30px;color:var(--c)}
+.cat b{font-family:var(--f-display);font-weight:700;font-size:15px;line-height:1.15}
+.cat span{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.cat::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--c);opacity:0;transition:opacity .15s}
+.cat[aria-pressed="true"]{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset}
+.cat[aria-pressed="true"]::after{opacity:1}
+[data-c="ex"]{--c:var(--c-ex)}[data-c="bo"]{--c:var(--c-bo)}[data-c="cond"]{--c:var(--c-cond)}[data-c="sv"]{--c:var(--c-sv)}[data-c="tox"]{--c:var(--c-tox)}[data-c="mort"]{--c:var(--c-mort)}
+.catintro{margin:0 0 14px;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:14.5px}
+.catintro b{color:var(--ink);font-family:var(--f-display)}
+
+/* Mapa */
+.layout{display:grid;grid-template-columns:minmax(340px,500px) minmax(0,1fr);gap:22px;align-items:start}
+.mapbox{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px;min-width:0}
+.maphead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.maphead b{font-family:var(--f-display);font-size:16px}
+.pill{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg2);border-color:var(--ink)}
+.maptools{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.maptools select{width:100%;min-width:0}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--bg2)}
+.seg button{font-family:var(--f-mono);font-size:11.5px;border:0;background:none;color:var(--muted);padding:5px 10px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg2)}
+#map{height:min(520px,62vh);border-radius:12px;background:var(--sea);border:1px solid var(--line);z-index:0;font-family:var(--f-display)}
+.leaflet-container a{color:var(--accent)}
+.leaflet-tooltip{font-family:var(--f-display);font-weight:500;font-size:13px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.leaflet-tooltip small{display:block;font-family:var(--f-mono);font-size:10.5px;color:var(--muted)}
+.leaflet-tooltip::before{display:none}
+.leaflet-control-attribution{font-family:var(--f-mono);font-size:9.5px}
+.leaflet-bar a,.leaflet-control-layers{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.leaflet-control-layers{font-family:var(--f-mono);font-size:12px}
+path.zona{stroke:var(--accent);stroke-width:1.2;fill:var(--accent);fill-opacity:.08;cursor:pointer;transition:fill-opacity .15s}
+path.zona:hover{stroke-width:2.5}
+path.zona.f1{fill-opacity:.16}path.zona.f2{fill-opacity:.36}path.zona.f3{fill-opacity:.6}
+path.zona.f0{fill-opacity:.03;stroke-dasharray:3 4;stroke-opacity:.6}
+path.zona.p-bo{fill:var(--p-bo);stroke:var(--p-bo);fill-opacity:.6}
+path.zona.p-aviat{fill:var(--p-aviat);stroke:var(--p-aviat);fill-opacity:.55}
+path.zona.p-reg{fill:var(--p-reg);stroke:var(--p-reg);fill-opacity:.5}
+path.zona.p-sec{fill:var(--p-sec);stroke:var(--p-sec);fill-opacity:.4}
+path.zona.p-gel{fill:var(--p-gel);stroke:var(--p-gel);fill-opacity:.6}
+path.zona.sel{stroke:var(--coral);stroke-width:3.5;stroke-dasharray:none;stroke-opacity:1}
+path.contorn{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3;pointer-events:none}
+.zoneinfo{font-size:13.5px;color:var(--muted);margin:0}
+.zoneinfo b{color:var(--ink);font-family:var(--f-display);font-size:16px;display:block}
+.zoneinfo .sub{font-family:var(--f-mono);font-size:11px;display:block;margin-bottom:4px}
+.zoneinfo .btn{margin-top:8px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:var(--accent)}
+.legend .l2{opacity:.6}.legend .l1{opacity:.3}
+.mapnote{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin:0}
+.rain{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--bg2);color:var(--ink)}
+.rain i{flex:none;width:12px;height:12px;border-radius:50%;margin-top:4px;background:var(--muted)}
+.rain small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.rain.bo i{background:var(--p-bo)}.rain.aviat i{background:var(--p-aviat)}.rain.reg i{background:var(--p-reg)}.rain.sec i{background:var(--p-sec)}.rain.gel i{background:var(--p-gel)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .mapbox{position:static}
+}
+
+.controls{display:grid;gap:12px;margin-bottom:6px}
+.searchrow{display:flex;gap:10px;flex-wrap:wrap}
+.search{flex:1 1 240px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.search svg{flex:none;color:var(--muted)}
+.search input{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:inherit;font-size:16px;padding:12px 0;outline:none}
+select{font:inherit;font-size:14px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;max-width:100%}
+.meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);margin:14px 0 10px}
+.main{min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;color:inherit;font:inherit;padding:0;transition:transform .15s,border-color .15s;min-width:0}
+.card:hover{border-color:var(--c);transform:translateY(-1px)}
+.photo{position:relative;aspect-ratio:4/3;max-width:100%;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:grid;place-items:center;color:var(--c);overflow:hidden}
+.photo svg{width:44px;height:44px;opacity:.7}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.photo img.ok{opacity:1}
+.photo .band{position:absolute;left:0;right:0;bottom:0;padding:3px 10px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--c)}
+:root .photo .band{color:var(--surface)}
+.card .body{padding:12px 14px 14px;min-width:0;display:grid;gap:2px}
+.card h3{font-family:var(--f-display);font-weight:700;font-size:17px;margin:0;line-height:1.2}
+.sci{font-style:italic;color:var(--muted);font-size:13.5px}
+.es{font-size:13px;color:var(--muted)}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--bg2);color:var(--muted);white-space:nowrap}
+.tag.ara{background:var(--accent-soft);color:var(--accent)}
+.tag.n3{background:var(--accent);color:var(--surface)}
+.tag.n2{background:var(--accent-soft);color:var(--accent)}
+.tag.n1{border:1px dashed var(--line)}
+.tag.cat{background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--c)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px;grid-column:1/-1}
+
+/* Panell de detall */
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--shade) 45%,transparent);z-index:1000;display:flex;justify-content:flex-end}
+.sheet{--c:var(--accent);background:var(--surface);width:min(600px,100%);height:100%;overflow-y:auto;padding:0 0 calc(30px + env(safe-area-inset-bottom,0px));box-shadow:-20px 0 40px rgba(0,0,0,.18);animation:slide .22s ease-out}
+@keyframes slide{from{transform:translateX(30px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.card{transition:none}.photo img{transition:none}}
+.sheet .hero{position:relative;aspect-ratio:16/10;max-width:100%;background:color-mix(in srgb,var(--c) 14%,var(--surface));display:grid;place-items:center;color:var(--c)}
+.sheet .hero svg{width:70px;height:70px;opacity:.6}
+.sheet .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sheet .hero.plain{aspect-ratio:auto;min-height:64px;background:none}
+.thumbs{display:flex;gap:6px;padding:8px 20px 0}
+.thumbs button{width:64px;height:48px;border-radius:8px;overflow:hidden;border:2px solid transparent;padding:0;cursor:pointer;background:var(--bg2)}
+.thumbs button[aria-pressed="true"]{border-color:var(--c)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.credit{font-family:var(--f-mono);font-size:11px;color:var(--muted);padding:6px 20px 0}
+.credit a{color:var(--muted)}
+.close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));border:0;background:var(--surface);color:var(--ink);border-radius:999px;width:40px;height:40px;font-size:22px;cursor:pointer;line-height:1;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:2}
+.sheet .inner{padding:14px max(20px,env(safe-area-inset-right,0px)) 0 20px}
+.sheet h2{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1.05;margin:4px 0 4px}
+.sheet .eyebrow{color:var(--c)}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:16px 0}
+.facts div{background:var(--surface);padding:10px 12px;min-width:0}
+.facts dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--f-display);font-weight:500;font-size:14.5px}
+.sheet p{margin:0 0 12px;max-width:62ch}
+.note{border-left:3px solid var(--gold);background:var(--gold-soft);padding:10px 14px;border-radius:0 10px 10px 0;margin:14px 0}
+.note.warn{border-color:var(--coral);background:var(--coral-soft)}
+.note.dead{border-color:var(--c-mort);background:color-mix(in srgb,var(--c-mort) 14%,var(--surface))}
+.note b{font-family:var(--f-display)}
+.h4{font-family:var(--f-display);font-weight:700;font-size:16px;margin:22px 0 8px}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.links a,.btn{font-family:var(--f-display);font-weight:500;font-size:14px;color:var(--c,var(--accent));text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:none;cursor:pointer}
+.links a.main,.btn.main{background:var(--c,var(--accent));color:var(--surface);border-color:var(--c,var(--accent))}
+.conf{display:grid;gap:8px}
+.conf button,.conf div.row{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;text-align:left;font:inherit;color:inherit;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px;cursor:pointer;min-width:0}
+.conf div.row{cursor:default;grid-template-columns:1fr}
+.conf .ph{width:72px;height:56px;border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface))}
+.conf .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.conf b{font-family:var(--f-display);font-size:15px}
+.conf span.t{display:block;font-size:13.5px;color:var(--muted);line-height:1.4}
+.cal{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;align-items:end}
+.cal div{display:grid;gap:3px;justify-items:stretch}
+.cal .bar{height:44px;display:flex;align-items:flex-end;background:var(--bg2);border-radius:4px;overflow:hidden}
+.cal .bar i{display:block;width:100%;background:var(--muted);opacity:.45}
+.cal .on .bar{background:color-mix(in srgb,var(--c) 18%,var(--surface))}
+.cal .on .bar i{background:var(--c);opacity:1}
+.cal span{font-family:var(--f-mono);font-size:10.5px;text-align:center;color:var(--muted)}
+.cal .now span{color:var(--ink);font-weight:500;text-decoration:underline}
+.calnote{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin:6px 0 0}
+.where{display:grid;grid-template-columns:minmax(150px,220px) 1fr;gap:16px;align-items:start}
+.where ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.where li{font-size:14px}
+.where li b{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.where li button{font:inherit;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.mini{width:100%;height:auto;display:block}
+.mini .land{fill:var(--land);stroke:var(--muted);stroke-width:.6}
+.mini path.z{fill:var(--c);fill-opacity:.06;stroke:var(--c);stroke-width:.4;stroke-opacity:.5}
+.mini path.f1{fill-opacity:.25}.mini path.f2{fill-opacity:.55}.mini path.f3{fill-opacity:.9}
+.rows{display:grid;gap:6px}
+.rows button{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;text-align:left;font:inherit;color:inherit;background:none;border:1px solid var(--line);border-radius:10px;padding:6px;cursor:pointer;min-width:0}
+.rows button:hover{border-color:var(--c)}
+.rows .ph{width:52px;height:40px;border-radius:6px;overflow:hidden;background:color-mix(in srgb,var(--c) 14%,var(--surface))}
+.rows .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.rows b{font-family:var(--f-display);font-size:14.5px;display:block;line-height:1.2}
+.rows small{font-family:var(--f-mono);font-size:10.5px;color:var(--muted)}
+.rows .r{display:grid;gap:3px;justify-items:end}
+.treechips{display:flex;gap:6px;flex-wrap:wrap}
+.treechips span{font-family:var(--f-display);font-size:13px;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.treechips span.t3{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.treechips span.t2{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.srcs{font-size:13px;color:var(--muted);padding-left:18px;margin:0}
+.srcs a{color:var(--accent)}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+footer p{margin:0 0 8px;max-width:90ch}
+footer a{color:var(--accent)}
+@media (max-width:1100px){.cats{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:620px){
+  .cats{grid-template-columns:repeat(2,1fr)}
+  .facts{grid-template-columns:repeat(2,1fr)}
+  .facts div:last-child:nth-child(odd){grid-column:1/-1}
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .card h3{font-size:15px}
+  .where{grid-template-columns:1fr}
+  .where .mini{max-width:260px}
+  .maptools{grid-template-columns:1fr}
+  .seg{justify-self:start}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Guia boletaire · Catalunya</div>
+    <h1>Boletus Finder</h1>
+    <p class="lede">Els bolets que es fan a Catalunya: quins són bons, com es cuinen, amb què es confonen i a quins boscos surten. Tria una zona al mapa o cerca un bolet.</p>
+    <p class="safety"><b>Abans de menjar-te un bolet:</b> aquesta guia serveix per orientar-se, no per decidir si un bolet és comestible. Si no n'estàs del tot segur, ensenya'l a un expert o a una societat micològica. En cas d'intoxicació, truca al 112.</p>
+  </header>
+
+  <div class="cats" id="cats"></div>
+  <div class="layout">
+    <aside class="mapbox" aria-label="Mapa de zones boletaires de Catalunya">
+      <div class="maphead"><b>On vols anar?</b><button class="pill" id="allcat" aria-pressed="true">Tot Catalunya</button></div>
+      <div class="maptools">
+        <select id="spsel" aria-label="Bolet que es pinta al mapa"></select>
+        <div class="seg" role="group" aria-label="Què pinta el mapa">
+          <button id="m-bolets" aria-pressed="true">Bolets</button><button id="m-pluja" aria-pressed="false">Pluja</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div class="legend" id="legend"></div>
+      <div class="zoneinfo" id="zoneinfo"></div>
+      <p class="mapnote" id="mapnote"></p>
+    </aside>
+    <div class="main">
+      <div class="catintro" id="catintro"></div>
+      <div class="controls">
+        <div class="searchrow">
+          <label class="search" for="q">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="q" type="search" placeholder="Cerca per nom català, castellà o científic" autocomplete="off">
+          </label>
+          <select id="mes" aria-label="Època de l'any"></select>
+          <select id="hab" aria-label="Tipus de bosc"></select>
+        </div>
+      </div>
+      <div class="meta"><span id="count"></span><span>Toca una fitxa per veure'n el detall</span></div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p><b>Com s'ha fet el mapa.</b> Cada parella de bolet i zona té un nivell (molt bona, bona, ocasional) que surt de tres fonts: el que citen guies, premsa i estudis; les observacions verificades d'<a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> dins de cada zona; i una deducció a partir dels arbres, l'altitud, el sòl i la pluja de la zona. A cada fitxa es veu d'on surt la dada. Els contorns de les zones són aproximats.</p>
+    <p><b>Normes bàsiques.</b> Cistell i ganivet, mai bosses de plàstic ni rasclets. Talla o arrenca amb cura i tapa el forat. No cullis exemplars massa petits ni més del que et menjaràs. Respecta les finques tancades i comprova la normativa del parc o del municipi abans d'anar-hi.</p>
+    <p>Textos redactats per a aquesta guia. Fotos d'observadors d'iNaturalist amb llicències Creative Commons; l'autor i la llicència surten a cada fitxa. Mapa base: Institut Cartogràfic i Geològic de Catalunya. Dades de pluja: Open-Meteo.</p>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="dades/bolets-1.js"></script>
+<script src="dades/bolets-2.js"></script>
+<script src="dades/zones.js"></script>
+<script src="dades/inat.js"></script>
+<script src="app.js"></script>
