@@ -147,15 +147,22 @@ function filtered() {
 function drawGrid() {
   const list = filtered(), z = state.z && Z[state.z];
   const quan = state.q.trim() ? '' : state.mes ? (+state.mes === ARA ? ' que surten ara' : ` al ${MESOS[state.mes - 1]}`.replace('al a', 'a l\'a').replace('al o', 'a l\'o')) : '';
-  $('#count').textContent = `${list.length} bolets${quan}${z ? ' a ' + z.n : ''}`;
+  // Amb una zona triada, la llista es parteix en grups perquè quadri amb el recompte del mapa (que només compta el primer grup)
+  const grups = z ? [
+    ['Bons que s\'hi fan bé', 'bons que s\'hi fan bé', list.filter(b => comestible(b) && nivell(b, z).n >= 2)],
+    ['Bons, però només ocasionals', 'bons ocasionals', list.filter(b => comestible(b) && nivell(b, z).n < 2)],
+    ['No són per menjar: amb condicions, sense valor, tòxics i mortals', 'que no són per menjar', list.filter(b => !comestible(b))]
+  ].filter(g => g[2].length) : [['', '', list]];
+  $('#count').textContent = `${list.length} bolets${quan}${z ? ' a ' + z.n : ''}` + (z && list.length ? ': ' + grups.map(g => `${g[2].length} ${g[1]}`).join(', ') : '');
   if (!list.length) { $('#grid').innerHTML = '<div class="empty">Cap bolet coincideix amb aquests filtres. Prova amb «Tot l\'any», canvia de categoria o tria una altra zona.</div>'; return; }
-  $('#grid').innerHTML = list.map(b => {
+  const fitxa = b => {
     const f = fotos(b)[0], r = z && nivell(b, z);
     return `<button class="card" data-c="${b.c}" data-id="${b.id}">
     <div class="photo">${ICONS[b.c]}${f ? `<img src="${imgURL(f)}" alt="" loading="lazy" onload="this.classList.add('ok')">` : ''}<span class="band">${CATS[b.c].u}</span></div>
     <div class="body"><h3>${esc(b.ca)}</h3><div class="sci">${esc(b.s)}</div><div class="es">${esc(temporada(b.m))}</div>
     <div class="tags">${r ? `<span class="tag n${r.n}">${NIVELL[r.n]}</span>` : ''}${b.m.includes(ARA) ? '<span class="tag ara">Surt ara</span>' : ''}</div></div></button>`;
-  }).join('');
+  };
+  $('#grid').innerHTML = grups.map(([t, , g]) => (t ? `<h2 class="sec">${t} <span>${g.length}</span></h2>` : '') + g.map(fitxa).join('')).join('');
 }
 $('#grid').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) openBolet(c.dataset.id); });
 
@@ -177,12 +184,13 @@ function initMap() {
   let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { map.invalidateSize(); if (!state.z) encaixa(); }, 200); });
 }
 const encaixa = () => map.fitBounds([[40.52, 0.16], [42.87, 3.33]], { animate: false });
+function totsAra(z) { return BOLETS.filter(b => enMesZona(b, z, state.mes) && nivell(b, z).n >= 1); }
 function bonsAra(z) { return BOLETS.filter(b => comestible(b) && enMesZona(b, z, state.mes) && nivell(b, z).n >= 2); }
 function tipZona(z) {
   let sub;
   if (state.mode === 'pluja') sub = pluja[z.id] ? PL[pluja[z.id].e].n : 'Sense dades de pluja';
   else if (state.sp) sub = NIVELL[nivell(B[state.sp], z).n] || 'Poc probable';
-  else { const n = bonsAra(z).length; sub = n ? `${n} bolets bons ${state.mes ? (+state.mes === ARA ? 'ara' : MES3[state.mes - 1]) : 'durant l\'any'}` : 'Res de temporada'; }
+  else { const n = bonsAra(z).length; const t = totsAra(z).length, quan = state.mes ? (+state.mes === ARA ? 'ara' : MES3[state.mes - 1]) : 'durant l\'any'; sub = t ? `${n} bons que s'hi fan bé ${quan} · ${t} bolets en total` : 'Res de temporada'; }
   return `${esc(z.n)}<small>${esc(sub)}</small>`;
 }
 function paintMap() {
@@ -232,7 +240,7 @@ function drawZoneInfo() {
     const z = Z[state.z], bons = bonsAra(z);
     if (!plujaEstat) carregaPluja();
     el.innerHTML = `<b>${esc(z.n)}</b><span class="sub">${esc(z.lloc)} · ${esc(z.co)}</span>${esc(z.d)}
-      ${bons.length ? `<br><b style="font-size:13.500px;margin-top:6px">Ara hi pots trobar</b>${bons.slice(0, 8).map(b => esc(b.ca.toLowerCase())).join(', ')}${bons.length > 8 ? '…' : ''}` : ''}
+      ${bons.length ? `<br><b style="font-size:13.500px;margin-top:6px">Bons que s'hi fan bé (${bons.length} de ${totsAra(z).length} bolets)</b>${bons.map(b => esc(b.ca.toLowerCase())).join(', ')}` : ''}
       ${plujaHTML(z)}<button class="btn main" id="zfitxa">Fitxa de la zona</button>`;
     $('#zfitxa').onclick = () => openZona(z.id);
   } else if (state.sp && state.mode === 'bolets') {
