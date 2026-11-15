@@ -21,7 +21,8 @@ window.FONTS = [
   {n:'NacióDigital · La campanya del bolet a Catalunya (dades del CTFC)', u:'https://naciodigital.cat/societat/la-campanya-del-bolet-a-catalunya-tanca-una-temporada-molt-desigual.html'},
   {n:'Diari de Tarragona · Regulació de la recollida de bolets a Poblet', u:'https://www.diaridetarragona.com/camp/162060/el-sector-forestal-demana-que-simplanti-la-llicncia-per-anar-a-collir-bolets-20210919-0033-yidt202109190033.html'},
   {n:'Surt de Casa · Anar a buscar bolets al Penedès', u:'https://surtdecasa.cat/penedes/entorn/anar-buscar-bolets-al-penedes'},
-  {n:'CTFC · Manual d\'itineraris de gestió micològica a Catalunya', u:'https://ctfc.cat/docs/Manual_itineraris_de_gestio_micologica_a_Catalunya.pdf'}
+  {n:'CTFC · Manual d\'itineraris de gestió micològica a Catalunya', u:'https://ctfc.cat/docs/Manual_itineraris_de_gestio_micologica_a_Catalunya.pdf'},
+  {n:'Exposició de bolets de la fira de Sant Sadurní de l\'Heura, 15 de novembre de 2026 (cartells fotografiats a la fira)', u:''}
 ];
 
 window.ZONES = [
@@ -194,7 +195,11 @@ window.ZONES = [
   d:'Suredes, alzinars i pinedes de pinastre i pi pinyer sobre pissarra i granit. Ou de reig i cep negre a principis de tardor; rossinyols i pinetells després.',
   t:{su:3,al:3,pm:2,pp:2,ca:1,ro:1}, alt:[80,530], s:'a', r:2,
   p:[[41.98,2.86],[41.97,3.05],[41.88,3.10],[41.83,3.02],[41.86,2.88],[41.92,2.84]],
-  doc:{ou_reig:[3,8],cep_negre:[2,8]}},
+  doc:{ou_reig:[3,8],cep_negre:[2,8],
+       /* exposats a la fira del bolet de Sant Sadurní de l'Heura (font 13) */
+       fredolic_pebrer:[2,13],fredolic_farinos:[2,13],girgola_bruc:[2,13],llenega_suro:[2,13],flota_suro:[2,13],carlet_blanc:[2,13],moixi_blanc:[2,13],llora_rosada:[2,13],
+       cualbres:[2,13],cualbra_amenicolor:[2,13],moixi_groc:[2,13],mataparent_vellutat:[2,13],cortinaris:[2,13],palometa_aspra:[2,13],mataparent_livid:[2,13],
+       trompeta:[2,13],candela:[2,13],fredolic:[2,13],carlet:[2,13],alzinoi:[2,13],llora:[2,13],farinera:[2,13],pixaca:[2,13],farinera_borda:[2,13]}},
  {id:'ardenya', n:'Ardenya i Cadiretes', lloc:'Llagostera, Tossa, Sant Grau', co:'Selva · Baix Empordà', reg:'Serralada Litoral',
   d:'Massís granític de suredes i pinedes de pi pinyer i pinastre davant del mar. Molt semblant a les Gavarres, però més sec.',
   t:{su:3,al:2,pp:2,pm:2,pb:1}, alt:[50,500], s:'a', r:2,

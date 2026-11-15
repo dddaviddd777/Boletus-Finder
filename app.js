@@ -47,6 +47,8 @@ const comestible = b => b.c === 'ex' || b.c === 'bo';
 const fotos = b => (INAT[b.id] && INAT[b.id].ph) || [];
 const imgURL = (f, mida) => 'https://inaturalist-open-data.s3.amazonaws.com/photos/' + f[0].replace('medium', mida || 'medium');
 const credit = (b, f) => `Foto: ${esc(f[2])} · ${LIC[f[1]] || f[1]} · <a href="https://www.inaturalist.org/taxa/${INAT[b.id].t}" target="_blank" rel="noopener">iNaturalist</a>`;
+/* Si la foto gran no es pot carregar (sense connexió), prova la mitjana i després la petita, que són les que es guarden */
+window.fotoPetita = img => { const s = img.src; if (s.includes('/large.')) img.src = s.replace('/large.', '/medium.'); else if (s.includes('/medium.')) img.src = s.replace('/medium.', '/small.'); };
 const thumb = b => { const f = fotos(b)[0]; return f ? `<img src="${imgURL(f, 'small')}" alt="" loading="lazy">` : ''; };
 
 /* ---------- Temporada ---------- */
@@ -326,13 +328,13 @@ function openBolet(id) {
   }).join('');
   const menja = comestible(b) || b.c === 'cond';
   show(`<div class="sheet" data-c="${b.c}" role="dialog" aria-modal="true" aria-labelledby="sh-t">
-    <div class="hero">${ICONS[b.c]}${fs[0] ? `<img id="sh-img" src="${imgURL(fs[0], 'large')}" alt="${esc(b.ca)}">` : ''}<button class="close" id="close" aria-label="Tanca">×</button></div>
+    <div class="hero">${ICONS[b.c]}${fs[0] ? `<img id="sh-img" src="${imgURL(fs[0], 'large')}" alt="${esc(b.ca)}" onerror="fotoPetita(this)">` : ''}<button class="close" id="close" aria-label="Tanca">×</button></div>
     ${fs.length > 1 ? `<div class="thumbs">${fs.map((f, i) => `<button data-i="${i}" aria-pressed="${i === 0}" aria-label="Foto ${i + 1}"><img src="${imgURL(f, 'small')}" alt=""></button>`).join('')}</div>` : ''}
     <div class="credit" id="sh-credit">${fs[0] ? credit(b, fs[0]) : 'Sense foto disponible amb llicència lliure.'}</div>
     <div class="inner">
       <div class="eyebrow">${CATS[b.c].u}</div>
       <h2 id="sh-t">${esc(b.ca)}</h2><div class="sci">${esc(b.s)}</div>
-      <div class="es">També: ${esc(b.an)} · Castellà: ${esc(b.es)}</div>
+      <div class="es">${[b.an && 'També: ' + esc(b.an), b.es && 'Castellà: ' + esc(b.es)].filter(Boolean).join(' · ')}</div>
       <dl class="facts">
         <div><dt>Temporada</dt><dd>${esc(temporada(b.m))}</dd></div>
         <div><dt>Altitud</dt><dd>${b.alt[0]}–${b.alt[1]} m</dd></div>
@@ -348,7 +350,7 @@ function openBolet(id) {
       <div class="h4">${menja ? 'On trobar-lo' : 'On surt'}</div>${onTrobar(b)}
       <div class="links" style="margin-top:14px"><button class="btn main" id="almapa">Mostra'l al mapa gran</button></div>
       <div class="h4">Més informació</div>
-      <div class="links"><a href="https://ca.wikipedia.org/w/index.php?go=Go&search=${encodeURIComponent(b.s)}" target="_blank" rel="noopener">Viquipèdia</a>${INAT[b.id] ? `<a href="https://www.inaturalist.org/taxa/${INAT[b.id].t}" target="_blank" rel="noopener">Més fotos a iNaturalist</a>` : ''}</div>
+      <div class="links"><a href="https://ca.wikipedia.org/w/index.php?go=Go&search=${encodeURIComponent(b.q || b.s)}" target="_blank" rel="noopener">Viquipèdia</a>${INAT[b.id] ? `<a href="https://www.inaturalist.org/taxa/${INAT[b.id].t}" target="_blank" rel="noopener">Més fotos a iNaturalist</a>` : ''}</div>
     </div></div>`);
   const sh = $('.sheet');
   sh.addEventListener('click', e => {
@@ -387,7 +389,7 @@ function openZona(id) {
       <div class="h4">Bolets bons (${bons.length})</div><div class="rows">${bons.map(fila).join('') || '<p>Cap de destacat.</p>'}</div>
       ${perill.length ? `<div class="h4">Perillosos que hi són freqüents (${perill.length})</div><div class="rows">${perill.map(fila).join('')}</div>` : ''}
       ${cond.length ? `<div class="h4">Amb condicions o sense valor (${cond.length})</div><div class="rows">${cond.map(fila).join('')}</div>` : ''}
-      ${fonts.length ? `<div class="h4">Fonts que citen aquesta zona</div><ul class="srcs">${fonts.map(i => `<li><a href="${FONTS[i].u}" target="_blank" rel="noopener">${esc(FONTS[i].n)}</a></li>`).join('')}</ul>` : ''}
+      ${fonts.length ? `<div class="h4">Fonts que citen aquesta zona</div><ul class="srcs">${fonts.map(i => `<li>${FONTS[i].u ? `<a href="${FONTS[i].u}" target="_blank" rel="noopener">${esc(FONTS[i].n)}</a>` : esc(FONTS[i].n)}</li>`).join('')}</ul>` : ''}
       <div class="h4">Per anar-hi</div>
       <div class="links"><a class="main" href="https://www.google.com/maps/search/?api=1&query=${c[0].toFixed(4)},${c[1].toFixed(4)}" target="_blank" rel="noopener">Obre a Google Maps</a><button class="btn" id="zsel">Filtra el catàleg per aquesta zona</button></div>
     </div></div>`);
@@ -415,6 +417,46 @@ window.addEventListener('popstate', () => closeSheet(true));
 drawCats(); drawSelects(); drawGrid(); drawZoneInfo();
 if (window.L) { initMap(); paintMap(); }
 else $('#map').innerHTML = '<p style="padding:20px;font-family:var(--f-body)">El mapa necessita connexió la primera vegada. El catàleg funciona igualment.</p>';
+
+/* ---------- Preparar l'app per fer-la servir sense cobertura ----------
+   Demana una foto mitjana i les petites de cada bolet, i les rajoles del mapa de tot Catalunya fins al zoom 10.
+   Les peticions passen pel service worker, que les guarda. */
+function rajoles() {
+  const u = [];
+  for (let z = 7; z <= 10; z++) {
+    const n = 2 ** z, x = lon => Math.floor((lon + 180) / 360 * n), y = lat => Math.floor((1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+    for (let i = x(0.15); i <= x(3.35); i++) for (let j = y(42.9); j <= y(40.5); j++)
+      u.push(`https://geoserveis.icgc.cat/servei/catalunya/mapa-base/wmts/topografic-gris/MON3857NW/${z}/${i}/${j}.png`);
+  }
+  return u;
+}
+function perBaixar() {
+  const u = [];
+  BOLETS.forEach(b => fotos(b).forEach((f, i) => { if (i === 0) u.push(imgURL(f)); u.push(imgURL(f, 'small')); }));
+  return u.concat(rajoles());
+}
+function pintaOffline(text, boto) {
+  $('#offline').innerHTML = `<span>${text}</span>${boto ? `<button class="btn main" id="baixa">${boto}</button>` : ''}`;
+  if (boto) $('#baixa').onclick = baixaTot;
+}
+function estatOffline() {
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') { $('#offline').hidden = true; return; }
+  let fet = null; try { fet = JSON.parse(localStorage.getItem('bf-offline') || 'null'); } catch (e) { /* tant és */ }
+  if (fet) pintaOffline(`<b>Preparada per al bosc.</b> Fotos i mapa baixats el ${new Date(fet.t).getDate()} ${MES3[new Date(fet.t).getMonth()]} Funciona sense cobertura.`, 'Torna-ho a baixar');
+  else pintaOffline('<b>Vas a un lloc sense cobertura?</b> Baixa abans les fotos i el mapa (uns 35 MB, millor amb wifi) i l\'app funcionarà sencera sense connexió.', 'Baixa fotos i mapa');
+}
+async function baixaTot() {
+  if (!navigator.serviceWorker.controller) { pintaOffline('<b>Encara s\'està instal·lant.</b> Tanca l\'app, torna-la a obrir i prova-ho un altre cop.', 'Baixa fotos i mapa'); return; }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  const urls = perBaixar(); let fets = 0, errors = 0, i = 0;
+  const pinta = () => pintaOffline(`<b>Baixant…</b> ${fets} de ${urls.length}. No tanquis l'app.`);
+  pinta();
+  const treballa = async () => { while (i < urls.length) { const u = urls[i++]; try { const r = await fetch(u, { mode: 'cors', credentials: 'omit', cache: 'no-store' }); if (!r.ok) errors++; } catch (e) { errors++; } fets++; if (fets % 10 === 0) pinta(); } };
+  await Promise.all(Array.from({ length: 6 }, treballa));
+  if (errors > urls.length * 0.05) pintaOffline(`<b>No s'ha pogut baixar tot.</b> Han fallat ${errors} de ${urls.length} fitxers. Comprova la connexió.`, 'Torna-ho a provar');
+  else { try { localStorage.setItem('bf-offline', JSON.stringify({ t: Date.now() })); } catch (e) { /* tant és */ } estatOffline(); }
+}
+estatOffline();
 
 /* Aplicació instal·lable: registra el service worker (només funciona servit per https o localhost) */
 if ('serviceWorker' in navigator && location.protocol !== 'file:')

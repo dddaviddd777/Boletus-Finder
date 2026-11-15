@@ -89,7 +89,7 @@ window.BOLETS = (window.BOLETS || []).concat([
   co:'—',
   av:'Provoca una intoxicació nerviosa al cap de 30 minuts a 3 hores: agitació, al·lucinacions, vòmits i somnolència profunda.',
   conf:[['ou_reig','L\'ou de reig té les làmines i el peu grocs, i la volva en forma de sac.']]},
- {id:'pixaca', ca:'Pixacà', an:'pixaconill, pantera', es:'Amanita pantera', s:'Amanita pantherina', c:'tox',
+ {id:'pixaca', ca:'Pixacà', an:'pigat, pixaconill, pantera', es:'Amanita pantera', s:'Amanita pantherina', c:'tox',
   m:[6,7,8,9,10], h:['al','ro','pr','fg','pb','su'], alt:[100,1700], sol:'', hum:2,
   hab:'Boscos de tota mena, tant alzinars i rouredes com pinedes',
   d:'Barret de 5 a 12 cm, bru, amb moltes berrugues petites i blanques i el marge estriat. Làmines blanques. Anell llis, sense estries. La base del peu és un bulb amb un rebord net, com si el peu estigués encastat en un got. La carn no canvia de color.',

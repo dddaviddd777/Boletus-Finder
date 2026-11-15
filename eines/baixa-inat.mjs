@@ -16,7 +16,7 @@ const NET = process.argv.includes('--net');
 fs.mkdirSync(CAU, { recursive: true });
 
 const w = {};
-for (const f of ['bolets-1.js', 'bolets-2.js', 'zones.js'])
+for (const f of ['bolets-1.js', 'bolets-2.js', 'bolets-3.js', 'zones.js'])
   new Function('window', fs.readFileSync(path.join(ARREL, 'dades', f), 'utf8'))(w);
 
 const espera = ms => new Promise(r => setTimeout(r, ms));

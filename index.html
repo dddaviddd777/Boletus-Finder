@@ -44,6 +44,10 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,5vw,52px);l
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .safety{margin:16px 0 0;padding:10px 14px;border-left:3px solid var(--coral);background:var(--coral-soft);border-radius:0 10px 10px 0;font-size:14px}
 .safety b{font-family:var(--f-display)}
+.offline{margin:10px 0 0;padding:10px 14px;border:1px solid var(--line);background:var(--surface);border-radius:10px;font-size:14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.offline span{flex:1 1 260px}
+.offline b{font-family:var(--f-display)}
+.offline .btn{flex:none}
 
 /* Categories */
 .cats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:22px 0 18px}
@@ -233,6 +237,7 @@ footer a{color:var(--accent)}
     <h1>Boletus Finder</h1>
     <p class="lede">Els bolets que es fan a Catalunya: quins són bons, com es cuinen, amb què es confonen i a quins boscos surten. Tria una zona al mapa o cerca un bolet.</p>
     <p class="safety"><b>Abans de menjar-te un bolet:</b> aquesta guia serveix per orientar-se, no per decidir si un bolet és comestible. Si no n'estàs del tot segur, ensenya'l a un expert o a una societat micològica. En cas d'intoxicació, truca al 112.</p>
+    <div class="offline" id="offline"></div>
   </header>
 
   <div class="cats" id="cats"></div>
@@ -279,6 +284,7 @@ footer a{color:var(--accent)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="dades/bolets-1.js"></script>
 <script src="dades/bolets-2.js"></script>
+<script src="dades/bolets-3.js"></script>
 <script src="dades/zones.js"></script>
 <script src="dades/inat.js"></script>
 <script src="app.js"></script>
